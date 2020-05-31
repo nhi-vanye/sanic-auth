@@ -2,6 +2,7 @@
 from collections import namedtuple
 from functools import partial, wraps
 from inspect import isawaitable
+import logging
 
 from sanic import response
 
@@ -44,7 +45,9 @@ class Auth:
         result, usually a token representing the logged in user, will be
         placed into the request session.
         """
-        self.get_session(request)[self.auth_session_key] = self.serialize(user)
+        if not request.ctx.session["session"].get(self.auth_session_key):
+            request.ctx.session["session"][self.auth_session_key] = 0
+        request.ctx.session[self.session_name][self.auth_session_key] = self.serialize(user)
 
     def logout_user(self, request):
         """Log out any logged in user in this session.
@@ -140,7 +143,7 @@ class Auth:
 
     def get_session(self, request):
         """Get the session object associated with current request"""
-        return request[self.session_name]
+        return request.ctx.session['session']
 
     def handle_no_auth(self, request):
         """Handle unauthorized user"""
